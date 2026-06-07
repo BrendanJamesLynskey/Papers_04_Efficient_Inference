@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Papers 04 — Efficient Inference &amp; Serving</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a0a;
+            --bg-card: #0d1117;
+            --bg-code: #161b22;
+            --text-primary: #e6edf3;
+            --text-secondary: #8b949e;
+            --accent: #76B900;
+            --accent-dim: #76B90044;
+            --accent-glow: #76B90033;
+            --border: #21262d;
+            --font-display: 'Space Grotesk', sans-serif;
+            --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+            --font-body: 'Inter', sans-serif;
+            --max-width: 900px;
+        }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
+        body {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: var(--font-body);
+            font-size: 17px;
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem 1.5rem;
+            text-align: center;
+            position: relative;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+        .hero > * { position: relative; z-index: 1; }
+        .series-label {
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--accent);
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            margin-bottom: 1rem;
+        }
+        .hero h1 {
+            font-family: var(--font-display);
+            font-size: clamp(2rem, 5vw, 3.2rem);
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1.2;
+            margin-bottom: 1rem;
+        }
+        .hero h1 .accent { color: var(--accent); }
+        .hero .subtitle {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            max-width: 640px;
+            margin-bottom: 2rem;
+        }
+        .tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            justify-content: center;
+            margin-bottom: 2.5rem;
+        }
+        .tag {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 999px;
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            background: var(--accent-dim);
+            white-space: nowrap;
+        }
+        .pipeline {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 0.25rem;
+            margin-bottom: 1rem;
+            max-width: var(--max-width);
+        }
+        .pipeline-step {
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            padding: 0.3rem 0.7rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--text-secondary);
+            white-space: nowrap;
+        }
+        .pipeline-arrow { color: var(--accent); font-size: 0.9rem; font-weight: 700; }
+        .slide {
+            min-height: 100vh;
+            max-width: var(--max-width);
+            margin: 0 auto;
+            padding: 4rem 1.5rem;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .slide-number {
+            font-family: var(--font-display);
+            font-size: 5rem;
+            font-weight: 700;
+            color: var(--accent-dim);
+            position: absolute;
+            top: 2rem;
+            right: 1.5rem;
+            line-height: 1;
+            user-select: none;
+        }
+        .slide h2 {
+            font-family: var(--font-display);
+            font-size: 1.9rem;
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 1.5rem;
+            line-height: 1.25;
+        }
+        .slide h3 {
+            font-family: var(--font-display);
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-top: 1.5rem;
+            margin-bottom: 0.75rem;
+        }
+        .slide p { margin-bottom: 1rem; color: var(--text-secondary); }
+        .slide p strong { color: var(--text-primary); }
+        .slide ul, .slide ol { margin-bottom: 1rem; padding-left: 1.5rem; color: var(--text-secondary); }
+        .slide li { margin-bottom: 0.4rem; }
+        .slide li strong { color: var(--text-primary); }
+        .slide code {
+            font-family: var(--font-mono);
+            font-size: 0.88em;
+            background: var(--bg-code);
+            border: 1px solid var(--border);
+            padding: 0.05rem 0.35rem;
+            border-radius: 3px;
+            color: #c9d1d9;
+        }
+        .code-block {
+            background: var(--bg-code);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin: 1.25rem 0;
+            overflow: hidden;
+        }
+        .code-header {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            color: var(--accent);
+            background: rgba(118, 185, 0, 0.08);
+            padding: 0.4rem 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+        .code-block pre { margin: 0; padding: 1rem; overflow-x: auto; }
+        .code-block code {
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            line-height: 1.6;
+            color: #c9d1d9;
+            background: transparent;
+            border: none;
+            padding: 0;
+        }
+        .kw { color: #ff7b72; }
+        .fn { color: #d2a8ff; }
+        .str { color: #a5d6ff; }
+        .cm { color: #8b949e; font-style: italic; }
+        .num { color: #79c0ff; }
+        .type { color: #ffa657; }
+        .dir { color: #ff7b72; }
+        .mac { color: #ffa657; }
+        .table-wrap {
+            overflow-x: auto;
+            margin: 1.25rem 0;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+        th {
+            background: var(--bg-code);
+            color: var(--accent);
+            font-weight: 600;
+            text-align: left;
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border);
+            font-family: var(--font-display);
+            white-space: nowrap;
+        }
+        td {
+            padding: 0.6rem 1rem;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-secondary);
+        }
+        tr:last-child td { border-bottom: none; }
+        tr:nth-child(even) td { background: rgba(13, 17, 23, 0.5); }
+        .diagram-flow {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            margin: 1.5rem 0;
+            padding: 1.5rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+        }
+        .diagram-box {
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            padding: 0.5rem 1rem;
+            background: var(--bg-code);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-primary);
+            text-align: center;
+            white-space: nowrap;
+        }
+        .diagram-box.accent { border-color: var(--accent); color: var(--accent); background: rgba(118, 185, 0, 0.08); }
+        .diagram-box.dim { color: var(--text-secondary); border-color: var(--border); }
+        .diagram-arrow { color: var(--accent); font-size: 1.3rem; font-weight: 700; }
+        .diagram-vertical {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.3rem;
+            margin: 1.5rem 0;
+            padding: 1.5rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+        }
+        .diagram-vertical .diagram-arrow { font-size: 1.1rem; }
+        .hierarchy {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin: 1.5rem 0;
+            padding: 1.5rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+        }
+        .hierarchy-level { display: flex; align-items: center; gap: 0.75rem; }
+        .hierarchy-label {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            min-width: 80px;
+            text-align: right;
+        }
+        .hierarchy-items { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+        .hierarchy-item {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            padding: 0.3rem 0.6rem;
+            border-radius: 4px;
+            background: var(--bg-code);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+        }
+        .hierarchy-item.accent { border-color: var(--accent); color: var(--accent); background: rgba(118, 185, 0, 0.08); }
+        .diagram-grid {
+            display: grid;
+            gap: 0.75rem;
+            margin: 1.5rem 0;
+            padding: 1.5rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+        }
+        .diagram-grid.cols-2 { grid-template-columns: 1fr 1fr; }
+        .diagram-grid.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+        .diagram-panel {
+            padding: 1rem;
+            background: var(--bg-code);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+        }
+        .diagram-panel.accent-border { border-left: 3px solid var(--accent); }
+        .diagram-panel h4 {
+            font-family: var(--font-display);
+            font-size: 1rem;
+            color: var(--accent);
+            margin-bottom: 0.5rem;
+        }
+        .diagram-panel p, .diagram-panel ul { font-size: 0.85rem; }
+        .callout {
+            background: var(--bg-card);
+            border-left: 3px solid var(--accent);
+            border-radius: 0 8px 8px 0;
+            padding: 1rem 1.25rem;
+            margin: 1.25rem 0;
+        }
+        .callout p { margin-bottom: 0; }
+        .callout p + p { margin-top: 0.5rem; }
+        .callout .callout-label {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 0.3rem;
+        }
+        .contents-list { list-style: none; padding-left: 0; counter-reset: contents; }
+        .contents-list li {
+            counter-increment: contents;
+            padding: 0.6rem 0;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .contents-list li:last-child { border-bottom: none; }
+        .contents-list li::before {
+            content: counter(contents, decimal-leading-zero);
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--accent);
+            min-width: 2rem;
+        }
+        .contents-list a { color: var(--text-primary); text-decoration: none; transition: color 0.2s; }
+        .contents-list a:hover { color: var(--accent); }
+        .footer {
+            text-align: center;
+            padding: 3rem 1.5rem;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            border-top: 1px solid var(--border);
+            max-width: var(--max-width);
+            margin: 0 auto;
+        }
+        .footer a { color: var(--accent); text-decoration: none; }
+        .footer a:hover { text-decoration: underline; }
+        .canvas-wrap {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1.25rem 0;
+            overflow-x: auto;
+        }
+        .canvas-wrap canvas, .canvas-wrap svg { display: block; margin: 0 auto; max-width: 100%; }
+        .badge {
+            display: inline-block;
+            font-family: var(--font-mono);
+            font-size: 0.65rem;
+            padding: 0.1rem 0.45rem;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            vertical-align: middle;
+            margin-left: 0.3rem;
+        }
+        .badge.ok    { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+        .badge.warn  { border-color: #ffa657; color: #ffa657; background: rgba(255,166,87,0.08); }
+        .badge.bad   { border-color: #ff7b72; color: #ff7b72; background: rgba(255,123,114,0.08); }
+        @media (max-width: 640px) {
+            .slide { padding: 3rem 1rem; min-height: auto; }
+            .slide-number { font-size: 3rem; top: 1.5rem; right: 1rem; }
+            .slide h2 { font-size: 1.5rem; }
+            .diagram-grid.cols-2, .diagram-grid.cols-3 { grid-template-columns: 1fr; }
+            .pipeline { gap: 0.15rem; }
+            .pipeline-step { font-size: 0.6rem; padding: 0.2rem 0.4rem; }
+            .hero h1 { font-size: 1.8rem; }
+            table { font-size: 0.78rem; }
+        }
+    </style>
+</head>
+<body>
+<header class="hero">
+    <div class="series-label">Key LLM Publications Series &mdash; Presentation 04</div>
+    <h1>Efficient Inference &amp; <span class="accent">Serving</span></h1>
+    <p class="subtitle">The five papers that turned the transformer from a research curiosity into something you can serve at scale: IO-aware attention, sparse experts, post-training quantisation, paged KV-cache memory, and speculative decoding.</p>
+    <div class="tags">
+        <span class="tag">FlashAttention</span>
+        <span class="tag">Mixture of Experts</span>
+        <span class="tag">GPTQ</span>
+        <span class="tag">PagedAttention/vLLM</span>
+        <span class="tag">Speculative Decoding</span>
+        <span class="tag">KV Cache</span>
+    </div>
+    <div class="pipeline">
+        <span class="pipeline-step">KV Cache</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">IO-aware Attention</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">Sparse MoE</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">Quantisation</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">Paged Serving</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">Speculative Decode</span>
+    </div>
+</header>
+
+<section class="slide" id="slide-00">
+    <div class="slide-number">00</div>
+    <h2>The Five Papers</h2>
+    <p>Training a large model is one problem; serving it cheaply, with low latency, at high throughput, is an entirely different one. These five publications define the modern inference and serving stack &mdash; each attacks a distinct bottleneck: memory bandwidth, FLOPs-per-token, model footprint, KV-cache fragmentation, and sequential decoding latency.</p>
+    <ul class="contents-list">
+        <li><a href="#slide-01">FlashAttention &mdash; IO-Aware Exact Attention</a></li>
+        <li><a href="#slide-02">Switch Transformers &mdash; Sparse Mixture of Experts</a></li>
+        <li><a href="#slide-03">GPTQ &mdash; Accurate Post-Training Quantisation</a></li>
+        <li><a href="#slide-04">PagedAttention &amp; vLLM &mdash; KV Cache as Virtual Memory</a></li>
+        <li><a href="#slide-05">Speculative Decoding &mdash; Draft, Verify, Accept</a></li>
+    </ul>
+</section>
+
+<section class="slide" id="slide-01">
+    <div class="slide-number">01</div>
+    <h2>FlashAttention &mdash; Fast and Memory-Efficient Exact Attention with IO-Awareness</h2>
+    <p><strong>Dao, Fu, Ermon, Rudra &amp; R&eacute; (Stanford)</strong>, 2022 <span class="badge ok">2022</span> &middot; <code>arXiv:2205.14135</code></p>
+
+    <h3>The problem</h3>
+    <p>Standard attention computes the full <code>N&times;N</code> score matrix, writes it to high-bandwidth memory (HBM), reads it back to apply softmax, writes again, reads again for the value matmul. On modern GPUs the arithmetic is cheap but the <strong>memory traffic dominates</strong>: attention is bandwidth-bound, not compute-bound. Materialising the quadratic matrix also makes memory scale as <code>O(N&sup2;)</code>, capping context length.</p>
+
+    <h3>The contribution</h3>
+    <p>FlashAttention reorders the computation to be <strong>IO-aware</strong>. It <em>tiles</em> the query, key and value matrices into blocks small enough to fit in the GPU's fast on-chip SRAM, and uses an <strong>online softmax</strong> (running max and running sum, rescaled as new blocks arrive) so the full attention matrix is never written to HBM. The result is <strong>exact</strong> attention &mdash; not an approximation &mdash; that is several times faster and whose memory footprint drops from <code>O(N&sup2;)</code> to <code>O(N)</code>.</p>
+
+    <div class="canvas-wrap">
+        <svg viewBox="0 0 700 230" width="700" height="230" xmlns="http://www.w3.org/2000/svg">
+            <style>
+                .fa-lbl { fill: #8b949e; font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+                .fa-ttl { fill: #76B900; font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 12px; }
+                .fa-big { fill: #e6edf3; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 13px; }
+            </style>
+            <text x="10" y="18" class="fa-ttl">GPU memory hierarchy &mdash; keep the working set in SRAM</text>
+            <!-- SRAM box -->
+            <rect x="30" y="40" width="200" height="120" rx="8" fill="none" stroke="#76B900" stroke-width="1.5"/>
+            <text x="130" y="60" text-anchor="middle" class="fa-big">SRAM (on-chip)</text>
+            <text x="130" y="80" text-anchor="middle" class="fa-lbl">~20 MB &middot; ~19 TB/s</text>
+            <rect x="55" y="95" width="40" height="40" fill="#76B90033" stroke="#76B900"/>
+            <rect x="100" y="95" width="40" height="40" fill="#76B90033" stroke="#76B900"/>
+            <rect x="145" y="95" width="40" height="40" fill="#76B90033" stroke="#76B900"/>
+            <text x="130" y="152" text-anchor="middle" class="fa-lbl">Q/K/V tiles</text>
+            <!-- arrows -->
+            <line x1="230" y1="100" x2="320" y2="100" stroke="#76B900" stroke-width="1.5"/>
+            <polygon points="320,96 330,100 320,104" fill="#76B900"/>
+            <line x1="320" y1="120" x2="230" y2="120" stroke="#8b949e" stroke-width="1.5" stroke-dasharray="3 3"/>
+            <polygon points="230,116 220,120 230,124" fill="#8b949e"/>
+            <text x="275" y="92" text-anchor="middle" class="fa-lbl">load tiles</text>
+            <text x="275" y="138" text-anchor="middle" class="fa-lbl">write output</text>
+            <!-- HBM box -->
+            <rect x="330" y="40" width="340" height="120" rx="8" fill="none" stroke="#21262d" stroke-width="1.5"/>
+            <text x="500" y="60" text-anchor="middle" class="fa-big">HBM (off-chip)</text>
+            <text x="500" y="80" text-anchor="middle" class="fa-lbl">40&ndash;80 GB &middot; ~2 TB/s</text>
+            <text x="500" y="108" text-anchor="middle" class="fa-lbl">Q, K, V, O stored here</text>
+            <text x="500" y="128" text-anchor="middle" class="fa-lbl" style="fill:#ff7b72;">N&times;N matrix NEVER materialised</text>
+            <!-- caption -->
+            <text x="350" y="205" class="fa-lbl">Online softmax: running max m and running sum &#8467; are rescaled as each K/V block streams in,</text>
+            <text x="350" y="222" class="fa-lbl">so the exact softmax-weighted output is built incrementally without the quadratic buffer.</text>
+        </svg>
+    </div>
+
+    <div class="diagram-flow">
+        <div class="diagram-box dim">N&times;N matrix in HBM</div>
+        <div class="diagram-arrow">&rarr;</div>
+        <div class="diagram-box accent">Tile Q,K,V into SRAM</div>
+        <div class="diagram-arrow">&rarr;</div>
+        <div class="diagram-box accent">Online softmax per block</div>
+        <div class="diagram-arrow">&rarr;</div>
+        <div class="diagram-box accent">Stream output to HBM</div>
+    </div>
+
+    <h3>Why it matters to a practising engineer</h3>
+    <p>FlashAttention is the reason long-context models are economically viable. It is now the default attention kernel in PyTorch (<code>scaled_dot_product_attention</code>), vLLM, and every serious training stack. <strong>FlashAttention-2</strong> (2023) improved work partitioning across warps for ~2&times; further speedup; <strong>FlashAttention-3</strong> (2024) exploits Hopper-specific features (async TMA, FP8) to reach ~75% of an H100's theoretical FLOPs. You rarely call it directly &mdash; but if your attention is slow, the first question is whether the kernel is being dispatched at all.</p>
+
+    <div class="callout">
+        <div class="callout-label">The lesson</div>
+        <p>On modern accelerators, the bottleneck is usually <strong>data movement, not arithmetic</strong>. The biggest wins come from algorithms that respect the memory hierarchy &mdash; reducing HBM reads/writes &mdash; rather than from reducing FLOPs. FlashAttention changes nothing mathematically; it changes <em>where the bytes live</em>.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-02">
+    <div class="slide-number">02</div>
+    <h2>Switch Transformers &mdash; Scaling to Trillion Parameter Models with Simple and Efficient Sparsity</h2>
+    <p><strong>Fedus, Zoph &amp; Shazeer (Google)</strong>, 2021 <span class="badge ok">2021</span> &middot; <code>arXiv:2101.03961</code></p>
+
+    <h3>The problem</h3>
+    <p>In a dense transformer, every parameter is activated for every token, so raising capacity raises the per-token compute (FLOPs) in lockstep. That makes scaling to trillions of parameters prohibitively expensive both to train and to serve.</p>
+
+    <h3>The contribution</h3>
+    <p>Switch Transformers replace the dense feed-forward block with a <strong>sparse Mixture-of-Experts (MoE)</strong> layer: a learned <strong>router</strong> inspects each token and sends it to a single expert FFN (<strong>top-1</strong> routing &mdash; the &ldquo;switch&rdquo;). With <code>E</code> experts the model holds roughly <code>E&times;</code> the parameters of a dense block, but each token still passes through only one expert, so <strong>per-token FLOPs stay flat</strong>. The paper simplifies prior MoE work (top-1 instead of top-2), adds a load-balancing auxiliary loss to keep experts evenly used, and uses selective-precision and capacity-factor tricks for stable training &mdash; reaching 1.6 trillion parameters.</p>
+
+    <div class="diagram-flow">
+        <div class="diagram-box accent">Token</div>
+        <div class="diagram-arrow">&rarr;</div>
+        <div class="diagram-box accent">Router<br><small>softmax gate</small></div>
+        <div class="diagram-arrow">&rarr;</div>
+        <div class="diagram-box dim">Expert 1</div>
+        <div class="diagram-box accent">Expert 2 &check;</div>
+        <div class="diagram-box dim">Expert 3</div>
+        <div class="diagram-box dim">&hellip; Expert E</div>
+        <div class="diagram-arrow">&rarr;</div>
+        <div class="diagram-box accent">Output</div>
+    </div>
+    <p style="font-size:0.82rem;">Top-1 routing: the router picks exactly one expert per token. Total parameters scale with <code>E</code>; active parameters (and therefore FLOPs) per token do not.</p>
+
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Property</th><th>Dense FFN</th><th>Sparse MoE (top-1)</th></tr></thead>
+            <tbody>
+                <tr><td><strong>Parameters</strong></td><td>1&times;</td><td>~E&times; (E = expert count)</td></tr>
+                <tr><td><strong>FLOPs per token</strong></td><td>1&times;</td><td>~1&times; (one expert active)</td></tr>
+                <tr><td><strong>Bottleneck</strong></td><td>Compute</td><td>Memory / VRAM to hold all experts</td></tr>
+                <tr><td><strong>Routing risk</strong></td><td>None</td><td>Load imbalance, token dropping at capacity</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <h3>Why it matters to a practising engineer</h3>
+    <p>MoE is now mainstream: <strong>Mixtral 8x7B</strong> (Mistral, 2023) uses 8 experts with top-2 routing &mdash; ~47 B total parameters but only ~13 B active per token, giving the quality of a much larger model at the inference cost of a small one. The serving catch is memory: you must hold <em>all</em> experts in VRAM even though most are idle each step, and throughput depends on routing being well-balanced across the batch. When you see &ldquo;A active of B total parameters&rdquo;, you are looking at this paper's idea.</p>
+
+    <div class="callout">
+        <div class="callout-label">The lesson</div>
+        <p>Decouple <strong>capacity from compute</strong>. Sparsity lets you grow what the model <em>knows</em> without growing what it <em>costs to run per token</em> &mdash; trading cheap-but-abundant VRAM for expensive-and-scarce FLOPs.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-03">
+    <div class="slide-number">03</div>
+    <h2>GPTQ &mdash; Accurate Post-Training Quantization for Generative Pre-trained Transformers</h2>
+    <p><strong>Frantar, Ashkboos, Hoefler &amp; Alistarh</strong>, 2022 <span class="badge ok">2022</span> &middot; <code>arXiv:2210.17323</code></p>
+
+    <h3>The problem</h3>
+    <p>A 175 B-parameter model in FP16 needs ~350 GB of memory just to hold its weights &mdash; far beyond a single GPU. Naive rounding to low precision (round-to-nearest) destroys accuracy on large models, and quantisation-aware <em>training</em> is far too expensive to redo on a foundation model.</p>
+
+    <h3>The contribution</h3>
+    <p>GPTQ is a <strong>one-shot, layer-wise post-training quantisation</strong> method. For each layer it minimises the reconstruction error of the layer's output using <strong>approximate second-order (Hessian) information</strong> &mdash; quantising weights one column at a time and updating the remaining full-precision weights to compensate for the error just introduced. It quantises down to <strong>3&ndash;4 bits</strong> with negligible accuracy loss, and can process a 175 B model in a few GPU-hours using only a small calibration set.</p>
+
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Precision</th><th>Bits/weight</th><th>7B model</th><th>70B model</th><th>175B model</th></tr></thead>
+            <tbody>
+                <tr><td>FP16 (baseline)</td><td>16</td><td>~14 GB</td><td>~140 GB</td><td>~350 GB</td></tr>
+                <tr><td>INT8</td><td>8</td><td>~7 GB</td><td>~70 GB</td><td>~175 GB</td></tr>
+                <tr><td><strong>GPTQ INT4</strong></td><td>~4</td><td>~3.5 GB</td><td>~35 GB</td><td>~88 GB</td></tr>
+                <tr><td>GPTQ INT3</td><td>~3</td><td>~2.7 GB</td><td>~27 GB</td><td>~66 GB</td></tr>
+            </tbody>
+        </table>
+    </div>
+    <p style="font-size:0.82rem;">Weight memory only; excludes activations and KV cache. INT4 turns a 70B model from a multi-GPU deployment into a single-A100 deployment.</p>
+
+    <h3>Why it matters to a practising engineer</h3>
+    <p>GPTQ (and the GPTQ file format) is one of the dominant ways quantised open-weights models are distributed and run &mdash; you have almost certainly downloaded a <code>-GPTQ</code> checkpoint. The complementary method to know is <strong>AWQ</strong> (Activation-aware Weight Quantization, Lin et al. 2023, arXiv:2306.00978): instead of Hessians it identifies the small fraction of <em>salient</em> weight channels &mdash; spotted via activation magnitudes &mdash; and protects them, which is often faster to apply and very competitive in accuracy. In practice you pick GPTQ or AWQ based on which has a clean kernel for your serving stack and your target hardware.</p>
+
+    <div class="callout">
+        <div class="callout-label">The lesson</div>
+        <p>You can recover most of full-precision quality at <strong>~4 bits</strong> by being clever about <em>which</em> error you minimise &mdash; not the per-weight rounding error, but the layer's <em>output</em> error, compensated across remaining weights. Quantisation is the cheapest lever for fitting a big model onto small hardware.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-04">
+    <div class="slide-number">04</div>
+    <h2>PagedAttention &amp; vLLM &mdash; Efficient Memory Management for LLM Serving</h2>
+    <p><strong>Kwon, Li, Zhuang, Sheng, Zheng, Yu, Gonzalez, Zhang &amp; Stoica (UC Berkeley)</strong>, 2023 <span class="badge ok">2023</span> &middot; <code>arXiv:2309.06180</code></p>
+
+    <h3>The problem</h3>
+    <p>During generation, every request accumulates a <strong>KV cache</strong> &mdash; the keys and values of all previous tokens. Classic serving systems allocate one large <em>contiguous</em> buffer per request, sized for the maximum possible length. This wastes enormous memory to internal and external <strong>fragmentation</strong> and reserved-but-unused slots, so GPU memory &mdash; not compute &mdash; becomes the limit on how many requests you can batch.</p>
+
+    <h3>The contribution</h3>
+    <p>PagedAttention applies the operating-system idea of <strong>virtual memory and paging</strong> to the KV cache. The cache is split into fixed-size <strong>blocks (pages)</strong> that need not be contiguous in physical GPU memory; a per-request <strong>block table</strong> maps logical positions to physical blocks. Blocks are allocated on demand (near-zero waste) and can be <strong>shared</strong> across requests &mdash; e.g. a common prompt prefix, or the parallel samples of one beam &mdash; via copy-on-write. Combined with <strong>continuous batching</strong> (admitting new requests as soon as slots free up), this multiplies serving throughput. It is the foundation of <strong>vLLM</strong>.</p>
+
+    <div class="diagram-grid cols-2">
+        <div class="diagram-panel accent-border">
+            <h4>Before &mdash; contiguous allocation</h4>
+            <p>Each request reserves one big slab sized for <code>max_len</code>. Unused tail = wasted VRAM. Two requests of different lengths cannot share, and fragmentation strands free memory you cannot use.</p>
+        </div>
+        <div class="diagram-panel accent-border">
+            <h4>After &mdash; paged blocks</h4>
+            <p>KV cache is chopped into uniform blocks scattered across VRAM. A block table indirects logical &rarr; physical. Allocate per-token-block on demand; share identical prefix blocks across requests via copy-on-write.</p>
+        </div>
+    </div>
+
+    <div class="canvas-wrap">
+        <svg viewBox="0 0 700 200" width="700" height="200" xmlns="http://www.w3.org/2000/svg">
+            <style>
+                .pa-lbl { fill: #8b949e; font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+                .pa-ttl { fill: #76B900; font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 12px; }
+            </style>
+            <text x="10" y="18" class="pa-ttl">Block table maps logical tokens to non-contiguous physical KV blocks</text>
+            <!-- logical -->
+            <text x="10" y="50" class="pa-lbl">Request A logical:</text>
+            <rect x="130" y="38" width="34" height="22" fill="#76B90033" stroke="#76B900"/>
+            <rect x="166" y="38" width="34" height="22" fill="#76B90033" stroke="#76B900"/>
+            <rect x="202" y="38" width="34" height="22" fill="#76B90033" stroke="#76B900"/>
+            <text x="147" y="53" text-anchor="middle" class="pa-lbl">b0</text>
+            <text x="183" y="53" text-anchor="middle" class="pa-lbl">b1</text>
+            <text x="219" y="53" text-anchor="middle" class="pa-lbl">b2</text>
+            <text x="10" y="92" class="pa-lbl">Request B logical:</text>
+            <rect x="130" y="80" width="34" height="22" fill="#76B90033" stroke="#76B900"/>
+            <rect x="166" y="80" width="34" height="22" fill="#76B90033" stroke="#76B900"/>
+            <text x="147" y="95" text-anchor="middle" class="pa-lbl">b0</text>
+            <text x="183" y="95" text-anchor="middle" class="pa-lbl">b1</text>
+            <!-- physical pool -->
+            <text x="10" y="150" class="pa-lbl">Physical VRAM pool:</text>
+            <rect x="150" y="135" width="40" height="26" fill="#0d1117" stroke="#21262d"/>
+            <rect x="195" y="135" width="40" height="26" fill="#76B90033" stroke="#76B900"/>
+            <rect x="240" y="135" width="40" height="26" fill="#76B90033" stroke="#76B900"/>
+            <rect x="285" y="135" width="40" height="26" fill="#0d1117" stroke="#21262d"/>
+            <rect x="330" y="135" width="40" height="26" fill="#76B90033" stroke="#76B900"/>
+            <rect x="375" y="135" width="40" height="26" fill="#0d1117" stroke="#21262d"/>
+            <rect x="420" y="135" width="40" height="26" fill="#76B90033" stroke="#76B900"/>
+            <rect x="465" y="135" width="40" height="26" fill="#76B90033" stroke="#76B900"/>
+            <text x="170" y="152" text-anchor="middle" class="pa-lbl">&middot;</text>
+            <text x="215" y="190" text-anchor="middle" class="pa-lbl">scattered, no contiguity needed</text>
+            <!-- mapping arrows -->
+            <line x1="147" y1="60" x2="215" y2="135" stroke="#76B900" stroke-width="1" stroke-dasharray="3 3"/>
+            <line x1="183" y1="60" x2="350" y2="135" stroke="#76B900" stroke-width="1" stroke-dasharray="3 3"/>
+            <line x1="219" y1="60" x2="440" y2="135" stroke="#76B900" stroke-width="1" stroke-dasharray="3 3"/>
+            <line x1="147" y1="102" x2="260" y2="135" stroke="#79c0ff" stroke-width="1" stroke-dasharray="3 3"/>
+            <line x1="183" y1="102" x2="485" y2="135" stroke="#79c0ff" stroke-width="1" stroke-dasharray="3 3"/>
+        </svg>
+    </div>
+
+    <h3>Why it matters to a practising engineer</h3>
+    <p>vLLM is now one of the most widely deployed open-source inference servers. The paper reports up to <strong>2&ndash;4&times; higher throughput</strong> than prior systems (FasterTransformer, Orca) at the same latency, by wasting under ~4% of KV memory instead of 60&ndash;80%. When you tune <code>gpu_memory_utilization</code>, <code>block_size</code>, or enable prefix caching, you are tuning the machinery from this paper.</p>
+
+    <div class="callout">
+        <div class="callout-label">The lesson</div>
+        <p>The serving bottleneck is often <strong>memory management, not the model</strong>. Borrowing a 50-year-old OS abstraction &mdash; paging &mdash; for the KV cache turned LLM serving from memory-starved into throughput-bound. Sometimes the best ML systems idea is a classic systems idea.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-05">
+    <div class="slide-number">05</div>
+    <h2>Speculative Decoding &mdash; Fast Inference from Transformers</h2>
+    <p><strong>Leviathan, Kalman &amp; Matias (Google)</strong>, 2022/2023 <span class="badge ok">2023</span> &middot; <code>arXiv:2211.17192</code></p>
+
+    <h3>The problem</h3>
+    <p>Autoregressive decoding is inherently <strong>sequential</strong>: each token needs the previous one. Generation latency is therefore dominated by the number of forward passes through the big model, and each pass is memory-bandwidth-bound (you reload all the weights to produce a single token), so the expensive GPU sits massively underutilised.</p>
+
+    <h3>The contribution</h3>
+    <p>Speculative decoding uses a small, cheap <strong>draft model</strong> to propose several future tokens, then runs the large <strong>target model</strong> <em>once</em> to score all of them <strong>in parallel</strong>. A clever acceptance/rejection test accepts the longest correct prefix and corrects the first wrong token from the target's own distribution. Crucially, the output distribution is <strong>provably identical</strong> to sampling from the target model alone &mdash; it is a pure latency optimisation, not an approximation &mdash; typically delivering a <strong>2&ndash;3&times; speedup</strong>.</p>
+
+    <div class="diagram-flow">
+        <div class="diagram-box accent">Draft model<br><small>proposes k tokens</small></div>
+        <div class="diagram-arrow">&rarr;</div>
+        <div class="diagram-box accent">Target model<br><small>1 parallel pass scores all k</small></div>
+        <div class="diagram-arrow">&rarr;</div>
+        <div class="diagram-box accent">Accept longest correct prefix</div>
+        <div class="diagram-arrow">&rarr;</div>
+        <div class="diagram-box dim">Reject &amp; resample first mismatch</div>
+    </div>
+
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Aspect</th><th>Standard decoding</th><th>Speculative decoding</th></tr></thead>
+            <tbody>
+                <tr><td><strong>Target passes per token</strong></td><td>1 (sequential)</td><td>&lt; 1 amortised (k verified at once)</td></tr>
+                <tr><td><strong>Output distribution</strong></td><td>Target</td><td>Identical to target (provably)</td></tr>
+                <tr><td><strong>Extra cost</strong></td><td>None</td><td>Cheap draft model + rejected tokens</td></tr>
+                <tr><td><strong>Best case</strong></td><td>&mdash;</td><td>High when draft agrees with target often</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <h3>Why it matters to a practising engineer</h3>
+    <p>Speculative decoding is now standard in production servers (vLLM, TensorRT-LLM, TGI). Speedup depends on the <strong>acceptance rate</strong> &mdash; how often the draft agrees with the target &mdash; so a well-matched draft model (or a self-drafting variant like <strong>Medusa</strong> heads, or n-gram / prompt-lookup drafting) matters. It pairs naturally with the previous papers: it reduces latency, while PagedAttention and quantisation reduce memory, and FlashAttention speeds each pass.</p>
+
+    <div class="callout">
+        <div class="callout-label">The lesson</div>
+        <p>Turn a <strong>sequential</strong> bottleneck into a <strong>parallel verification</strong> one. Because verifying k guesses in one batched pass costs almost the same as generating one token, a cheap draft model can buy a large speedup &mdash; with zero change to the output distribution.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-06">
+    <div class="slide-number">06</div>
+    <h2>What to Take Away</h2>
+    <ul>
+        <li><strong>Inference is a systems problem.</strong> On modern GPUs the limiter is usually memory bandwidth and memory capacity, not raw FLOPs &mdash; the winning techniques respect the hardware.</li>
+        <li><strong>FlashAttention</strong> makes attention IO-aware: tiling + online softmax give exact attention with <code>O(N)</code> memory. It is the default kernel everywhere; FlashAttention-2/3 push it further on newer GPUs.</li>
+        <li><strong>Sparse MoE (Switch Transformers)</strong> decouples capacity from per-token compute. Mixtral and most frontier models now ship as MoE &mdash; great FLOPs efficiency, heavy on VRAM.</li>
+        <li><strong>GPTQ</strong> (and AWQ) shrink weights to ~4 bits post-training with minimal quality loss, turning multi-GPU models into single-GPU deployments.</li>
+        <li><strong>PagedAttention / vLLM</strong> manage the KV cache like OS virtual memory, eliminating fragmentation and enabling sharing &mdash; the basis of high-throughput open serving.</li>
+        <li><strong>Speculative decoding</strong> attacks sequential latency with a draft-then-verify scheme that preserves the target distribution exactly, for a 2&ndash;3&times; speedup.</li>
+        <li>These five compose: <strong>FlashAttention</strong> (per-pass speed) + <strong>MoE</strong> (compute efficiency) + <strong>quantisation</strong> (footprint) + <strong>PagedAttention</strong> (throughput) + <strong>speculative decoding</strong> (latency) is the modern serving stack.</li>
+    </ul>
+
+    <div class="callout">
+        <div class="callout-label">Where to next</div>
+        <p>Presentation 05 &mdash; <strong>Context, Position &amp; Retrieval</strong> &mdash; turns from <em>how fast</em> to <em>how far</em>: positional encodings (RoPE, ALiBi), context-length extension, long-context attention, and retrieval-augmented generation. The efficiency techniques in this deck are exactly what make those long contexts affordable to serve.</p>
+    </div>
+</section>
+
+<footer class="footer">
+    <p>Part of the <a href="https://github.com/BrendanJamesLynskey/LLM_Hub_Key_Publications">Key LLM Publications Series</a></p>
+    <p style="margin-top:0.5rem;font-size:0.8rem;"><a href="https://github.com/BrendanJamesLynskey/LLM_Hub_Key_Publications">Back to Series Index</a></p>
+</footer>
+<script>
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            const target = document.querySelector(this.getAttribute('href'));
+            if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+    });
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.style.opacity = '1';
+                entry.target.style.transform = 'translateY(0)';
+            }
+        });
+    }, { threshold: 0.1 });
+    document.querySelectorAll('.slide').forEach(slide => {
+        slide.style.opacity = '0';
+        slide.style.transform = 'translateY(30px)';
+        slide.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+        observer.observe(slide);
+    });
+</script>
+</body>
+</html>
