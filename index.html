@@ -9,15 +9,15 @@
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-primary: #0a0a0a;
-            --bg-card: #0d1117;
-            --bg-code: #161b22;
-            --text-primary: #e6edf3;
-            --text-secondary: #8b949e;
-            --accent: #76B900;
-            --accent-dim: #76B90044;
-            --accent-glow: #76B90033;
-            --border: #21262d;
+            --bg-primary: #f2f1ee;
+            --bg-card: #eae8e4;
+            --bg-code: #e1dfd9;
+            --text-primary: #171717;
+            --text-secondary: #615f59;
+            --accent: #36774d;
+            --accent-dim: #36774d44;
+            --accent-glow: #36774d1a;
+            --border: #d1cfc7;
             --font-display: 'Space Grotesk', sans-serif;
             --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
             --font-body: 'Inter', sans-serif;
@@ -165,7 +165,7 @@
             border: 1px solid var(--border);
             padding: 0.05rem 0.35rem;
             border-radius: 3px;
-            color: #c9d1d9;
+            color: #2d2d2a;
         }
         .code-block {
             background: var(--bg-code);
@@ -178,7 +178,7 @@
             font-family: var(--font-mono);
             font-size: 0.75rem;
             color: var(--accent);
-            background: rgba(118, 185, 0, 0.08);
+            background: rgba(54,119,77,0.08);
             padding: 0.4rem 1rem;
             border-bottom: 1px solid var(--border);
         }
@@ -187,19 +187,19 @@
             font-family: var(--font-mono);
             font-size: 0.85rem;
             line-height: 1.6;
-            color: #c9d1d9;
+            color: #2d2d2a;
             background: transparent;
             border: none;
             padding: 0;
         }
-        .kw { color: #ff7b72; }
-        .fn { color: #d2a8ff; }
-        .str { color: #a5d6ff; }
-        .cm { color: #8b949e; font-style: italic; }
-        .num { color: #79c0ff; }
-        .type { color: #ffa657; }
-        .dir { color: #ff7b72; }
-        .mac { color: #ffa657; }
+        .kw { color: #9d1128; }
+        .fn { color: #422750; }
+        .str { color: #172539; }
+        .cm { color: #615f59; font-style: italic; }
+        .num { color: #173055; }
+        .type { color: #95621f; }
+        .dir { color: #9d1128; }
+        .mac { color: #95621f; }
         .table-wrap {
             overflow-x: auto;
             margin: 1.25rem 0;
@@ -223,7 +223,7 @@
             color: var(--text-secondary);
         }
         tr:last-child td { border-bottom: none; }
-        tr:nth-child(even) td { background: rgba(13, 17, 23, 0.5); }
+        tr:nth-child(even) td { background: rgba(234,232,228,0.5); }
         .diagram-flow {
             display: flex;
             flex-wrap: wrap;
@@ -247,7 +247,7 @@
             text-align: center;
             white-space: nowrap;
         }
-        .diagram-box.accent { border-color: var(--accent); color: var(--accent); background: rgba(118, 185, 0, 0.08); }
+        .diagram-box.accent { border-color: var(--accent); color: var(--accent); background: rgba(54,119,77,0.08); }
         .diagram-box.dim { color: var(--text-secondary); border-color: var(--border); }
         .diagram-arrow { color: var(--accent); font-size: 1.3rem; font-weight: 700; }
         .diagram-vertical {
@@ -290,7 +290,7 @@
             border: 1px solid var(--border);
             color: var(--text-secondary);
         }
-        .hierarchy-item.accent { border-color: var(--accent); color: var(--accent); background: rgba(118, 185, 0, 0.08); }
+        .hierarchy-item.accent { border-color: var(--accent); color: var(--accent); background: rgba(54,119,77,0.08); }
         .diagram-grid {
             display: grid;
             gap: 0.75rem;
@@ -384,8 +384,8 @@
             margin-left: 0.3rem;
         }
         .badge.ok    { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
-        .badge.warn  { border-color: #ffa657; color: #ffa657; background: rgba(255,166,87,0.08); }
-        .badge.bad   { border-color: #ff7b72; color: #ff7b72; background: rgba(255,123,114,0.08); }
+        .badge.warn  { border-color: #95621f; color: #95621f; background: rgba(149,98,31,0.08); }
+        .badge.bad   { border-color: #9d1128; color: #9d1128; background: rgba(157,17,40,0.08); }
         @media (max-width: 640px) {
             .slide { padding: 3rem 1rem; min-height: auto; }
             .slide-number { font-size: 3rem; top: 1.5rem; right: 1rem; }
@@ -453,32 +453,32 @@
     <div class="canvas-wrap">
         <svg viewBox="0 0 700 230" width="700" height="230" xmlns="http://www.w3.org/2000/svg">
             <style>
-                .fa-lbl { fill: #8b949e; font-family: 'JetBrains Mono', monospace; font-size: 11px; }
-                .fa-ttl { fill: #76B900; font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 12px; }
-                .fa-big { fill: #e6edf3; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 13px; }
+                .fa-lbl { fill: #615f59; font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+                .fa-ttl { fill: #36774d; font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 12px; }
+                .fa-big { fill: #171717; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 13px; }
             </style>
             <text x="10" y="18" class="fa-ttl">GPU memory hierarchy &mdash; keep the working set in SRAM</text>
             <!-- SRAM box -->
-            <rect x="30" y="40" width="200" height="120" rx="8" fill="none" stroke="#76B900" stroke-width="1.5"/>
+            <rect x="30" y="40" width="200" height="120" rx="8" fill="none" stroke="#36774d" stroke-width="1.5"/>
             <text x="130" y="60" text-anchor="middle" class="fa-big">SRAM (on-chip)</text>
             <text x="130" y="80" text-anchor="middle" class="fa-lbl">~20 MB &middot; ~19 TB/s</text>
-            <rect x="55" y="95" width="40" height="40" fill="#76B90033" stroke="#76B900"/>
-            <rect x="100" y="95" width="40" height="40" fill="#76B90033" stroke="#76B900"/>
-            <rect x="145" y="95" width="40" height="40" fill="#76B90033" stroke="#76B900"/>
+            <rect x="55" y="95" width="40" height="40" fill="#36774d33" stroke="#36774d"/>
+            <rect x="100" y="95" width="40" height="40" fill="#36774d33" stroke="#36774d"/>
+            <rect x="145" y="95" width="40" height="40" fill="#36774d33" stroke="#36774d"/>
             <text x="130" y="152" text-anchor="middle" class="fa-lbl">Q/K/V tiles</text>
             <!-- arrows -->
-            <line x1="230" y1="100" x2="320" y2="100" stroke="#76B900" stroke-width="1.5"/>
-            <polygon points="320,96 330,100 320,104" fill="#76B900"/>
-            <line x1="320" y1="120" x2="230" y2="120" stroke="#8b949e" stroke-width="1.5" stroke-dasharray="3 3"/>
-            <polygon points="230,116 220,120 230,124" fill="#8b949e"/>
+            <line x1="230" y1="100" x2="320" y2="100" stroke="#36774d" stroke-width="1.5"/>
+            <polygon points="320,96 330,100 320,104" fill="#36774d"/>
+            <line x1="320" y1="120" x2="230" y2="120" stroke="#615f59" stroke-width="1.5" stroke-dasharray="3 3"/>
+            <polygon points="230,116 220,120 230,124" fill="#615f59"/>
             <text x="275" y="92" text-anchor="middle" class="fa-lbl">load tiles</text>
             <text x="275" y="138" text-anchor="middle" class="fa-lbl">write output</text>
             <!-- HBM box -->
-            <rect x="330" y="40" width="340" height="120" rx="8" fill="none" stroke="#21262d" stroke-width="1.5"/>
+            <rect x="330" y="40" width="340" height="120" rx="8" fill="none" stroke="#d1cfc7" stroke-width="1.5"/>
             <text x="500" y="60" text-anchor="middle" class="fa-big">HBM (off-chip)</text>
             <text x="500" y="80" text-anchor="middle" class="fa-lbl">40&ndash;80 GB &middot; ~2 TB/s</text>
             <text x="500" y="108" text-anchor="middle" class="fa-lbl">Q, K, V, O stored here</text>
-            <text x="500" y="128" text-anchor="middle" class="fa-lbl" style="fill:#ff7b72;">N&times;N matrix NEVER materialised</text>
+            <text x="500" y="128" text-anchor="middle" class="fa-lbl" style="fill:#9d1128;">N&times;N matrix NEVER materialised</text>
             <!-- caption -->
             <text x="350" y="205" class="fa-lbl">Online softmax: running max m and running sum &#8467; are rescaled as each K/V block streams in,</text>
             <text x="350" y="222" class="fa-lbl">so the exact softmax-weighted output is built incrementally without the quadratic buffer.</text>
@@ -608,41 +608,41 @@
     <div class="canvas-wrap">
         <svg viewBox="0 0 700 200" width="700" height="200" xmlns="http://www.w3.org/2000/svg">
             <style>
-                .pa-lbl { fill: #8b949e; font-family: 'JetBrains Mono', monospace; font-size: 11px; }
-                .pa-ttl { fill: #76B900; font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 12px; }
+                .pa-lbl { fill: #615f59; font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+                .pa-ttl { fill: #36774d; font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 12px; }
             </style>
             <text x="10" y="18" class="pa-ttl">Block table maps logical tokens to non-contiguous physical KV blocks</text>
             <!-- logical -->
             <text x="10" y="50" class="pa-lbl">Request A logical:</text>
-            <rect x="130" y="38" width="34" height="22" fill="#76B90033" stroke="#76B900"/>
-            <rect x="166" y="38" width="34" height="22" fill="#76B90033" stroke="#76B900"/>
-            <rect x="202" y="38" width="34" height="22" fill="#76B90033" stroke="#76B900"/>
+            <rect x="130" y="38" width="34" height="22" fill="#36774d33" stroke="#36774d"/>
+            <rect x="166" y="38" width="34" height="22" fill="#36774d33" stroke="#36774d"/>
+            <rect x="202" y="38" width="34" height="22" fill="#36774d33" stroke="#36774d"/>
             <text x="147" y="53" text-anchor="middle" class="pa-lbl">b0</text>
             <text x="183" y="53" text-anchor="middle" class="pa-lbl">b1</text>
             <text x="219" y="53" text-anchor="middle" class="pa-lbl">b2</text>
             <text x="10" y="92" class="pa-lbl">Request B logical:</text>
-            <rect x="130" y="80" width="34" height="22" fill="#76B90033" stroke="#76B900"/>
-            <rect x="166" y="80" width="34" height="22" fill="#76B90033" stroke="#76B900"/>
+            <rect x="130" y="80" width="34" height="22" fill="#36774d33" stroke="#36774d"/>
+            <rect x="166" y="80" width="34" height="22" fill="#36774d33" stroke="#36774d"/>
             <text x="147" y="95" text-anchor="middle" class="pa-lbl">b0</text>
             <text x="183" y="95" text-anchor="middle" class="pa-lbl">b1</text>
             <!-- physical pool -->
             <text x="10" y="150" class="pa-lbl">Physical VRAM pool:</text>
-            <rect x="150" y="135" width="40" height="26" fill="#0d1117" stroke="#21262d"/>
-            <rect x="195" y="135" width="40" height="26" fill="#76B90033" stroke="#76B900"/>
-            <rect x="240" y="135" width="40" height="26" fill="#76B90033" stroke="#76B900"/>
-            <rect x="285" y="135" width="40" height="26" fill="#0d1117" stroke="#21262d"/>
-            <rect x="330" y="135" width="40" height="26" fill="#76B90033" stroke="#76B900"/>
-            <rect x="375" y="135" width="40" height="26" fill="#0d1117" stroke="#21262d"/>
-            <rect x="420" y="135" width="40" height="26" fill="#76B90033" stroke="#76B900"/>
-            <rect x="465" y="135" width="40" height="26" fill="#76B90033" stroke="#76B900"/>
+            <rect x="150" y="135" width="40" height="26" fill="#eae8e4" stroke="#d1cfc7"/>
+            <rect x="195" y="135" width="40" height="26" fill="#36774d33" stroke="#36774d"/>
+            <rect x="240" y="135" width="40" height="26" fill="#36774d33" stroke="#36774d"/>
+            <rect x="285" y="135" width="40" height="26" fill="#eae8e4" stroke="#d1cfc7"/>
+            <rect x="330" y="135" width="40" height="26" fill="#36774d33" stroke="#36774d"/>
+            <rect x="375" y="135" width="40" height="26" fill="#eae8e4" stroke="#d1cfc7"/>
+            <rect x="420" y="135" width="40" height="26" fill="#36774d33" stroke="#36774d"/>
+            <rect x="465" y="135" width="40" height="26" fill="#36774d33" stroke="#36774d"/>
             <text x="170" y="152" text-anchor="middle" class="pa-lbl">&middot;</text>
             <text x="215" y="190" text-anchor="middle" class="pa-lbl">scattered, no contiguity needed</text>
             <!-- mapping arrows -->
-            <line x1="147" y1="60" x2="215" y2="135" stroke="#76B900" stroke-width="1" stroke-dasharray="3 3"/>
-            <line x1="183" y1="60" x2="350" y2="135" stroke="#76B900" stroke-width="1" stroke-dasharray="3 3"/>
-            <line x1="219" y1="60" x2="440" y2="135" stroke="#76B900" stroke-width="1" stroke-dasharray="3 3"/>
-            <line x1="147" y1="102" x2="260" y2="135" stroke="#79c0ff" stroke-width="1" stroke-dasharray="3 3"/>
-            <line x1="183" y1="102" x2="485" y2="135" stroke="#79c0ff" stroke-width="1" stroke-dasharray="3 3"/>
+            <line x1="147" y1="60" x2="215" y2="135" stroke="#36774d" stroke-width="1" stroke-dasharray="3 3"/>
+            <line x1="183" y1="60" x2="350" y2="135" stroke="#36774d" stroke-width="1" stroke-dasharray="3 3"/>
+            <line x1="219" y1="60" x2="440" y2="135" stroke="#36774d" stroke-width="1" stroke-dasharray="3 3"/>
+            <line x1="147" y1="102" x2="260" y2="135" stroke="#173055" stroke-width="1" stroke-dasharray="3 3"/>
+            <line x1="183" y1="102" x2="485" y2="135" stroke="#173055" stroke-width="1" stroke-dasharray="3 3"/>
         </svg>
     </div>
 
